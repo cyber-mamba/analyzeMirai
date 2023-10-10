@@ -439,6 +439,10 @@ ForumPost.mdにビルドの方法は書いてあるので、とりあえずそ�
 # 動的解析
 # 静的解析
     -table.c
+
+![image](https://github.com/cyber-mamba/analyzeMirai/assets/96987448/d16422cf-eecf-4239-8329-1027aeeac740)
+![image](https://github.com/cyber-mamba/analyzeMirai/assets/96987448/3eb13e86-56ff-43d9-9247-eddc489b4326)
+
         -TABLE_CNC_DOMAIN→botがC2サーバに接続する際に、C2サーバのドメイン名を難読化して指定するところ。
 	-
     -debug
