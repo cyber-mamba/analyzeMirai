@@ -575,7 +575,7 @@ ForumPost.mdにビルドの方法は書いてあるので、とりあえずそ�
 	-TABLESCAN_CB_PORT
 
 # 表層解析
-まずはここから。使うツールはPEStudio, Floss, DIE
+まずはここから。使うツールはPEStudio, Floss, DIE,
 # 動的解析
 # 静的解析
     -table.c
