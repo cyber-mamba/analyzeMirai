@@ -418,14 +418,16 @@ void x__exit(int code)
 このフォルダにはダウンローダーに関するコードが含まれています。
 前述のdlrもダウンローダーですが、こちらもダウンローダーです。こちらメインのダウンローダーみたいです。
 Miraiのボットを拡散させるためのもので、Miraiに感染している端末がほかの感染可能な端末を見つけたとき、その端末にMiraiのボットをダウンロードさせるための役割を担っています。
+サーバとの接続にはtelnetが使用され、wgetかtftpを用いてファイルの受け渡しを行うようです。
 ※Miraiの全体概要図を挿入
 ### bins
 ### src
 #### headers
 main.cなどで使われるheaderファイルが含まれています。
+### binary.c
+binsフォルダにあるバイナリファイルを読みこむ機能があります。
 #### main.c
 ダウンロード元サーバのIPアドレスなどがハードコードされています。
-サーバにはtelnetとwget、tftpを使用しています。
 ```c
 // include部分は省略
 static void *stats_thread(void *);
@@ -551,7 +553,132 @@ gcc -static -O3 -lpthread -pthread src/*.c -o loader
 
 
 ## mirai
-## scripts
+
+### bot
+多数
+
+### cnc
+#### admin.go
+#### api.go
+#### attack.go
+#### bot.go
+#### clientList.go
+#### constants.go
+#### database.go
+#### main.go
+
+### tools
+#### badbot.c
+"REPORT <IPアドレス> <ポート番号>"という文字列を1秒おきに出力するだけのプログラムで、これ自体は特に悪意のあるコードではありません。
+#### enc.c
+引数を3つ取ります。
+以下のような引数を与えて使用します。
+第二引数にどの文字列を選択するかで、暗号化の処理が変わりますが、いずれもXORによる暗号化です。
+```
+<任意の数値> <string, ip, uint32, uint16, uint8, boolのいずれかの文字列> <暗号化対象のデータ>)
+```
+
+例えば
+```
+enc.c 3 bool gonyonyo
+```
+
+また、実際に暗号化を行っているのは以下の部分です。
+以下の"len"がデータの長さを表しますが、enc.cに渡すuint16等の引数によってlenが変わります。
+
+```c
+    for (i = 0; i < len; i++)
+    {
+        char tmp = buf[i] ^ k1;
+
+        tmp ^= k2;
+        tmp ^= k3;
+        tmp ^= k4;
+
+        out[i] = tmp;
+    }
+
+```
+
+なお、enc.cではキーとして"0xdeadbeef"が使われており、復号する際はこの文字列で再度XORをすると復号できそうです。
+```c
+static uint32_t table_key = 0xdeadbeef;
+```
+
+#### nogdb.c
+デバッガでプログラムの解析を行うことがありますが、それを困難にするためのプログラムです。
+ELFファイルのヘッダーであるe_shoff, e_shnum, e_shstrndxという部分を0xffffに書き換えています。
+解析において有用なこれらの情報を書き換えることで、リバースエンジニアリングを困難にする目的があります。
+
+| ヘッダー名  | 役割                                                                                  |
+|------------|----------------------------------------------------------------------------------------|
+| `e_shoff`  | セクションヘッダーテーブルのオフセット情報(開始位置) を持つ
+                                       |
+| `e_shnum`  | セクションヘッダーテーブルのセクションの数を持つ
+                                       |
+| `e_shstrndx`  | セクション名に関する情報持つ。  
+
+
+```c
+    header->e_shoff = 0xffff;
+    header->e_shnum = 0xffff;
+    header->e_shstrndx = 0xffff;
+```
+
+#### scanListen.go
+botがスキャンしたIoTデバイスの結果を受信、解析するための機能が書かれたプログラムです。このプログラムは、以下の図で言うところのレポートサーバ部分です。
+※ここに図を挿入
+
+レポートサーバは48101ポートで通信を受け付けます。
+```go
+func main() {
+    l, err := net.Listen("tcp", "0.0.0.0:48101")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+```
+
+また、ここでレポートサーバが受け取る情報は、IPアドレス、ポート、ユーザ名、パスワードの情報です。
+
+#### single_load.c
+C&Cサーバの機能が実装されている部分です。
+感染したbotに対してDDoS攻撃を支持する機能等が書かれています。
+
+スキャンして脆弱と判断されたデバイスに対してログインするための機能です。
+```c
+token = strsep(&running, ":");
+strcpy(stateTable[fd].username, token);
+            
+token = strsep(&running, ":");
+strcpy(stateTable[fd].password, token);
+```
+
+ログインした後、以下をスキャンしたデバイス上で実行します。
+これによってシェルを獲得し、新たにbotに感染させます。
+
+```c
+sockprintf(state->fd, "/bin/busybox mkdir -p %s; /bin/busybox rm %s/a; /bin/busybox cp -f /bin/sh %s/a && /bin/busybox VDOSS\r\n", state->path[0], state->path[0], state->path[0]);
+```
+
+#### wget.c
+HTTPでリモートサーバからファイルをダウンロードします。
+ファイルは"wget_bin"という名前でダウンロードされます。
+
+```c
+ffd = open("wget_bin", O_WRONLY | O_CREAT | O_TRUNC, 0777);
+```
+
+### build.sh
+レポートサーバの軌道を確認するためのプログラムです。
+このプログラム単体では不正な動きはしません。
+
+### prompt.txt
+直訳すると "I like chicken nuggets."と書かれています。
+果たして何に使われているのか、、
+```
+я люблю куриные наггетсы
+```
 
 # ローカルでのMiraiボットネットの構築
 ForumPost.mdにビルドの方法は書いてあるので、とりあえずその通りにやっていきます。
@@ -575,7 +702,7 @@ ForumPost.mdにビルドの方法は書いてあるので、とりあえずそ�
 	-TABLESCAN_CB_PORT
 
 # 表層解析
-まずはここから。使うツールはPEStudio, Floss, DIE,
+まずはここから。使うツールはPEStudio, Floss, DIE
 # 動的解析
 # 静的解析
     -table.c
