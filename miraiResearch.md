@@ -709,4 +709,4 @@ ForumPost.mdにビルドの方法は書いてあるので、とりあえずそ�
         -TABLE_CNC_DOMAIN→botがC2サーバに接続する際に、C2サーバのドメイン名を難読化して指定するところ。
 	-
     -debug
-        -enc→TABLE_CNC_DOMAINで設定するドメイン名を難読化するためのツール
+        -enc→TABLE_CNC_DOMAINで設定するドメイン名を難読化するためのツール.
